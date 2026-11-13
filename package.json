@@ -32,6 +32,9 @@
   "type": "module",
   "scripts": {
     "dev": "turbo run dev",
+    "dev:demo": "bun run --cwd apps/web dev:bare",
+    "build:demo": "bun run --cwd apps/web build",
+    "test": "bun test apps/web/src/features/tickets",
     "build": "turbo run build",
     "check-types": "turbo run check-types",
     "db:push": "turbo run db:push -F @seidor_it/db --",

@@ -2,6 +2,7 @@
   "references": [{ "path": "../../packages/api" }],
   "compilerOptions": {
     "target": "ES2017",
+    "types": ["node", "bun"],
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,

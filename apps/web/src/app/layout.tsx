@@ -1,40 +1,49 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-
+import { JetBrains_Mono, Roboto } from "next/font/google";
 import "../index.css";
-import Header from "@/components/header";
-import Providers from "@/components/providers";
+import { Toaster } from "@seidor_it/ui/components/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const roboto = Roboto({
+	subsets: ["latin"],
+	variable: "--font-roboto",
+	display: "swap",
 });
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const mono = JetBrains_Mono({
+	subsets: ["latin"],
+	variable: "--font-jetbrains",
+	display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "seidor_it",
-  description: "seidor_it",
+	title: "Mesa · Central de chamados",
+	description:
+		"Um espaço para acompanhar, atender e resolver chamados de suporte.",
 };
 
 export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Providers>
-          <div className="grid grid-rows-[auto_1fr] h-svh">
-            <Header />
-            {children}
-          </div>
-        </Providers>
-      </body>
-    </html>
-  );
+	children,
+}: Readonly<{ children: React.ReactNode }>) {
+	return (
+		<html
+			lang="pt-BR"
+			suppressHydrationWarning
+			className={`${roboto.variable} ${mono.variable}`}
+		>
+			<body className="antialiased">
+				<ThemeProvider
+					attribute="class"
+					defaultTheme="light"
+					enableSystem={false}
+					disableTransitionOnChange
+				>
+					<TooltipProvider>
+						{children}
+						<Toaster richColors position="bottom-right" />
+					</TooltipProvider>
+				</ThemeProvider>
+			</body>
+		</html>
+	);
 }
