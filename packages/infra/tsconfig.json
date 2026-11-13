@@ -1,0 +1,4 @@
+{
+  "extends": "@seidor_it/config/tsconfig.base.json",
+  "include": ["alchemy.run.ts"]
+}

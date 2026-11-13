@@ -1,0 +1,3 @@
+{
+  "extends": "@seidor_it/config/tsconfig.base.json"
+}
