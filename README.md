@@ -1,155 +1,126 @@
-# seidor_it
+# Mesa · Central de chamados
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines Next.js, Hono, ORPC, and more.
+Uma fatia de um ITSM em React: consultar, assumir e abrir chamados, conversar, registrar notas internas, alterar status com motivo, reabrir e acompanhar a distribuição da equipe.
 
-## Features
+**Estado dos dados:** o `dados.json` original não foi obtido. O link do WeTransfer não disponibilizou um download acessível nesta implementação, e a consulta de transferência retornou HTTP 401. Esta entrega usa **84 chamados fictícios**, identificados na interface como demonstração. Não afirma reproduzir o schema ou o volume do material original. Integrar e validar esse material é uma pendência antes de considerar o teste completo.
 
-- **TypeScript** - For type safety and improved developer experience
-- **Next.js** - Full-stack React framework
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **Shared UI package** - shadcn/ui primitives live in `packages/ui`
-- **Hono** - Lightweight, performant server framework
-- **oRPC** - End-to-end type-safe APIs with OpenAPI integration
-- **Bun** - Runtime environment
-- **Drizzle** - TypeScript-first ORM
-- **PostgreSQL** - Database engine
-- **Authentication** - Better-Auth
-- **Turborepo** - Optimized monorepo build system
-- **Biome** - Linting and formatting
+## Rodar
 
-## Getting Started
+Requisitos: **Bun 1.4.4** e **Node.js 24 LTS** (ou uma versão compatível com Next.js 16). A verificação nesta máquina utilizou Bun 1.4.4 e Node.js 26.13.1.
 
-First, install the dependencies:
-
-```bash
-bun install
+```sh
+bun install --frozen-lockfile
+bun run dev:demo
 ```
 
-## Database Setup
+Abra **http://localhost:3001**. A demonstração **não exige servidor de API, PostgreSQL, Docker, conta ou credenciais**. O valor padrão `NEXT_PUBLIC_SERVER_URL` atende às rotas legadas do scaffold; a central não faz chamadas àquele servidor.
 
-This project uses PostgreSQL with Drizzle ORM.
-
-1. Make sure you have a PostgreSQL database set up.
-2. Update your `apps/server/.env` file with your PostgreSQL connection details.
-
-3. Apply the schema to your database:
-
-```bash
-bun run db:push
+```sh
+bun run test                         # testes do domínio e dos intervalos sem atribuição
+bun run --cwd apps/web check-types   # checagem TypeScript
+bun run build:demo                   # build de produção
+bun run --cwd apps/web start --port 3001  # servir o build (pare o dev antes)
 ```
 
-Then, run the development server:
+O `bun run dev` original ainda inicia a infraestrutura do monorepo. Para avaliar esta entrega, use **`dev:demo`**.
 
-```bash
-bun run dev
+## Ver cada perfil
+
+O seletor no rodapé da barra lateral alterna os perfis. No celular, abra o menu no cabeçalho. Cada aba pode estar em um perfil diferente.
+
+| Perfil | Link | O que aparece primeiro |
+| --- | --- | --- |
+| Marina, consultora | http://localhost:3001/?perfil=marina | Chamados atribuídos, ordenados por prazo, e acesso à fila do grupo |
+| Ricardo, gestor | http://localhost:3001/?perfil=ricardo | Carga dos 12 consultores, pessoas sem chamados e prazos em risco |
+| Helena, cliente | http://localhost:3001/?perfil=helena | Seus atendimentos, quem está cuidando deles e o próximo passo |
+
+Um chamado tem link próprio: `/?perfil=helena&chamado=chamado-0`. A visão do cliente permite apenas chamados do próprio solicitante. Abrir um link de outro cliente mostra uma mensagem de indisponibilidade.
+
+## Roteiro de avaliação
+
+1. **Priorizar:** como Marina, abra os prazos em atenção. Atrasados e vencimentos nas próximas duas horas aparecem antes dos demais; cor vem acompanhada de texto e ícone. Busca por assunto, número, descrição ou solicitante; filtros de status; ordenação; paginação de dez registros.
+2. **Assumir:** abra a fila do grupo, escolha um chamado sem responsável e use **Assumir chamado**. Ele passa para os atendimentos de Marina.
+3. **Conversar:** abra `chamado-0` como Marina e como Helena em duas abas. Envie uma resposta pelo cliente e observe a aba da consultora. Escreva um rascunho antes de enviar a mensagem na outra aba: o conteúdo é preservado.
+4. **Nota interna:** na consultora, alterne para **Nota interna** e envie uma anotação. Ela aparece para a equipe e não aparece na interface, resumo ou notificações do cliente. Os rascunhos de nota e resposta são separados.
+5. **Mudar status:** o responsável ou gestor usa **Alterar status**. O motivo é obrigatório e público, com aviso explícito no formulário. O histórico registra autoria, momento e transição. Um chamado fechado bloqueia novas mensagens até ser reaberto.
+6. **Reabrir:** como Helena, vá a **Concluídos**, abra um atendimento e use **O problema voltou**. Informe o motivo para retornar a Recebido. Na abertura de um chamado, um título como “VPN desconecta” sugere o atendimento fechado semelhante.
+7. **Redistribuir:** como Ricardo, abra um chamado e mude o responsável no painel lateral. A lista contém somente consultores do grupo. A nova carga aparece no painel e nas demais abas.
+8. **Simular concorrência:** o rodapé permite enviar um evento por vez ou ativar um evento a cada 18 segundos. A sequência é mensagem → abertura → atribuição → status. Cada evento é entregue duas vezes propositalmente; a interface deve aplicar apenas uma. Os eventos automáticos começam desativados.
+
+Atalhos: `/` foca a busca; `Ctrl + Enter` ou `⌘ + Enter` envia uma resposta. Os diálogos usam os comportamentos de foco e teclado do Base UI. Tema claro e escuro no botão ao lado do perfil.
+
+## Decisões de produto
+
+- **Um sistema, três prioridades.** A consultora decide o próximo atendimento pelo prazo. O gestor compara carga e risco sem precisar ler conversas. O cliente recebe contexto resumido e um próximo passo; não preenche categoria, grupo nem prioridade interna.
+- **Detalhe sem perder o trabalho.** Rascunhos são separados por usuário, chamado e visibilidade. Novas mensagens mostram um aviso para ir ao final; não deslocam automaticamente uma conversa em leitura.
+- **Atualização útil para quem recebe.** Notificações de Marina cobrem seus chamados; Helena vê apenas mensagens públicas de seus próprios atendimentos. O resumo do cliente usa a última resposta pública da equipe ou o motivo público da última mudança de status, conforme o mais recente.
+- **Datas sem ambiguidade.** Armazenamento e eventos usam UTC. Marina e Ricardo veem `America/Sao_Paulo`; Helena vê `Europe/Lisbon`, incluindo horário de verão via `Intl`.
+- **SLA explícito na demonstração.** `prazo_em` é um prazo absoluto de resolução, em horas corridas. Aguardar o cliente não pausa a contagem. Novo chamado recebe oito horas; reabertura mantém o prazo original, inclusive quando vencido, até existir uma política definida. Não inventamos um novo prazo de primeira resposta ou uma extensão silenciosa de SLA.
+- **Sem confundir disponibilidade com produtividade.** A coluna “Sem chamados” integra intervalos sem nenhum chamado ativo atribuído, nos últimos sete dias e somente desde o início do período observado. Inclui horas corridas; não desconta jornada, ausência ou feriado. A interface informa que a primeira sessão não fornece uma semana completa. Uma métrica semanal real exige histórico de atribuições e uma definição de calendário operacional.
+- **Simulação transparente.** A interface identifica os dados fictícios, a persistência no navegador e a sincronização local. Não indica uma conexão WebSocket real nem uma notificação por e-mail que não existe.
+
+## Arquitetura
+
+O monorepo Next.js/React já existia. A central fica isolada em `apps/web/src/features/tickets`:
+
+| Arquivo | Responsabilidade |
+| --- | --- |
+| `domain.ts` | Tipos, schemas Zod de eventos, autorização simulada, replay, visibilidade, datas e SLA |
+| `seed.ts` | Dados fictícios reproduzíveis a partir de uma data de referência |
+| `store.ts` | API simulada assíncrona, IndexedDB, transporte entre abas e reconciliação |
+| `metrics.ts` | Integração dos intervalos observados sem chamados |
+| `workspace.tsx` | Navegação, perfis, notificações e indicadores |
+| `ticket-list.tsx` | Busca, filtros, ordenação e paginação |
+| `ticket-detail.tsx` | Conversa, rascunhos, notas e contexto do atendimento |
+| `ticket-dialogs.tsx` | Criação e alteração de status com validação |
+| `team.tsx` | Distribuição da equipe e fila em risco |
+
+### Eventos e persistência
+
+- Os quatro eventos seguem o envelope solicitado: `id` UUID, `tipo`, `ocorrido_em` UTC e `payload`.
+- Zod valida o contrato na entrada. O log é deduplicado por ID de evento e as mensagens por ID de mensagem.
+- Replay ordenado por data e UUID torna o resultado independente da ordem de chegada. A mesma mensagem repetida não duplica a conversa, e um status antigo recebido depois não sobrescreve o mais recente.
+- O snapshot inicial e o log são persistidos em **IndexedDB**. A criação do snapshot usa uma transação para evitar bases diferentes quando duas abas abrem simultaneamente.
+- **BroadcastChannel** propaga eventos entre abas. A reconciliação do log ao recuperar foco e a cada cinco segundos cobre mensagens perdidas e navegadores sem esse transporte.
+- **Web Locks** serializa comandos concorrentes no mesmo navegador. Antes de gravar, o comando relê o log e verifica o responsável/status atual. Numeração e timestamps de comandos são definidos dentro da região serializada. Sem Web Locks, essa garantia de concorrência é reduzida.
+- O estado React usa `useSyncExternalStore`. Rascunhos e marcadores de leitura usam `localStorage`, com tratamento de indisponibilidade. Falha no armazenamento de eventos mantém a sessão utilizável e mostra um aviso de persistência limitada.
+
+Em produção, uma sequência/cursor do servidor deve resolver ordenação causal; timestamps e UUIDs, sozinhos, não bastam para eventos simultâneos. O backend deve fornecer autorização, isolamento de tenant, validação das transições, compare-and-set de atribuições, idempotência, replay após reconexão e política de SLA. Para volumes grandes, substituir o replay integral e os filtros locais por projeções incrementais, busca/paginação de servidor e snapshots compactados.
+
+**O seletor de perfis não é autenticação.** Por ser uma demonstração sem backend, o dataset completo está no navegador. Ocultar notas na interface não constitui uma barreira de segurança contra inspeção do armazenamento. Em produção, a API e os canais de eventos do cliente devem omitir as notas internas antes de enviá-las.
+
+Para integrar o `dados.json`, mapear seu schema para `Dataset`, validar IDs, relações, status e regras de SLA, substituir a origem do snapshot em `store.ts` e manter os componentes sobre esse contrato. O cálculo de intervalos recebe o snapshot original, não reconstrói o passado a partir da fila atual. Não há um importador genérico que prometa aceitar um arquivo cujo formato não foi visto.
+
+### Dependências e suporte
+
+- **Next.js 16**, linha Active LTS na política consultada em 13/11/2026; build validado em **16.4.6**. Preferimos manter a linha suportada já presente no projeto a migrar para uma major nova apenas por novidade. [Política oficial](https://nextjs.org/support-policy).
+- **React 19**, validado em **19.3.1**, e TypeScript com checagem estrita. React não oferece aqui uma garantia plurianual de LTS.
+- **shadcn/ui com Base UI**, preset **`b3DqK6kfYm`**, aplicado pelo CLI: **Luma, neutral, Phosphor, Roboto e JetBrains Mono nos títulos**. Os componentes da central estão em `apps/web/src/components/ui`; os tokens compartilhados estão em `packages/ui/src/styles/globals.css`. O restante do pacote de UI é do scaffold anterior.
+- **Tailwind CSS 4**, Zod e Sonner já compatíveis com a base. Não foi necessária uma biblioteca adicional de gráficos: a carga usa barras neutras com escala comum, valores em tabela, tooltips e tratamento de alto contraste. Contraste das barras contra a superfície: 5,42:1 no claro e 7,09:1 no escuro.
+- `bun.lock` preserva as versões efetivamente verificadas. Use `--frozen-lockfile` para reproduzir. A manutenção ao longo dos próximos anos exige patches frequentes, revisão de suporte antes do go-live e migrações de major planejadas; nenhuma versão escolhida hoje dispensa isso.
+
+O backend Hono/oRPC, autenticação, banco e infraestrutura já presentes foram preservados. As rotas `/login` e `/dashboard` pertencem ao scaffold e não fazem parte da demonstração; dependem da API original. O contexto de queries do dashboard foi mantido no layout dessa rota.
+
+## Verificações
+
+- **13 testes / 115 assertions**: duplicidade de eventos, entrega fora de ordem, contratos inválidos, isolamento de clientes/notas, disputa de atribuição, status obsoleto, reabertura autorizada, limites de SLA, fixtures e intervalos de ociosidade.
+- Checagem TypeScript e build de produção.
+- Lint/format dos arquivos TypeScript da implementação. O CSS usa estilos por componente e breakpoints; o Biome sinaliza avisos de especificidade entre seletores independentes e `!important` nas regras de movimento reduzido.
+- Validação manual em Chromium: fila, detalhe, rascunho durante evento, separação de rascunhos, nota interna oculta do cliente, resposta entre abas, redistribuição, reabertura com motivo, sugestão de chamado anterior, abertura e persistência após recarga.
+- Layout conferido em **1440 × 1000** e **390 × 844**; sem transbordamento horizontal no cenário móvel avaliado. Isso não substitui uma matriz de testes entre navegadores e leitores de tela.
+
+Para reiniciar a demonstração, feche suas abas e remova o armazenamento de `localhost:3001` nas ferramentas do navegador (IndexedDB `chamados-demo-v1` e chaves de rascunho/leitura). Isso apaga apenas os dados locais dessa demonstração. Os testes do domínio não alteram esse armazenamento.
+
+## Entrega por git bundle
+
+O bundle preserva o commit inicial e os commits da implementação. Para abrir uma cópia:
+
+```sh
+git clone mesa-itsm.bundle mesa-itsm
+cd mesa-itsm
+git switch feat/chamados-workspace
+bun install --frozen-lockfile
+bun run dev:demo
 ```
 
-Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
-The API is running at [http://localhost:3000](http://localhost:3000).
-
-## UI Customization
-
-React web apps in this stack share shadcn/ui primitives through `packages/ui`.
-
-- Change design tokens and global styles in `packages/ui/src/styles/globals.css`
-- Update shared primitives in `packages/ui/src/components/*`
-- Adjust shadcn aliases or style config in `packages/ui/components.json` and `apps/web/components.json`
-
-### Add more shared components
-
-Run this from the project root to add more primitives to the shared UI package:
-
-```bash
-npx shadcn@latest add accordion dialog popover sheet table -c packages/ui
-```
-
-Import shared components like this:
-
-```tsx
-import { Button } from "@seidor_it/ui/components/button";
-```
-
-### Add app-specific blocks
-
-If you want to add app-specific blocks instead of shared primitives, run the shadcn CLI from `apps/web`.
-
-## Environment Configuration
-
-Each app owns its environment schema in `.env.schema`. Varlock generates `src/env.ts` during installation; run `bun run env:generate` after changing a schema. Commit schemas, and keep secrets in ignored env files or your deployment platform.
-
-Import the generated `ENV` accessor in application code. Shared database and auth packages receive configuration or initialized clients from the application. See [Varlock's monorepo guide](https://varlock.dev/guides/monorepos/).
-
-Bun's automatic env loading is disabled in `bunfig.toml`; the framework integration or server bootstrap loads Varlock. Node deployments must include Varlock and its dependencies alongside the app schema.
-
-Run standalone Node/Bun tools that use Varlock from the owning app directory so they load that app's schema and env files. `env:generate` only generates TypeScript files; it does not initialize environment values in a subsequent command.
-
-## Deployment
-
-### Alchemy
-
-- Target: Axiom observability
-- Configure provider accounts: `cd packages/infra && bunx alchemy profile edit`
-- Dev: bun run dev
-- Deploy: bun run deploy:infra
-- Destroy: bun run destroy
-
-`alchemy profile edit` stores the selected Axiom, Cloudflare, Neon, PlanetScale, and/or Prisma provider profiles under `~/.alchemy`; no provider-specific setup command is required by this scaffold.
-
-Deploys are staged and default to a personal `dev_<username>` stage. For production, run the deploy with an explicit stage from `packages/infra`:
-
-```bash
-cd packages/infra && bunx alchemy deploy --stage production
-```
-
-Alchemy creates a stage-specific Axiom dataset and a least-privilege ingest token. `dev` injects the credentials into the observed apps without writing the token to an env file.
-For a deployed Docker image, pass `AXIOM_API_KEY`, `AXIOM_DATASET`, and `AXIOM_EDGE_URL` through the target platform's secret manager. Local observed development runs through Alchemy with the credentials injected in memory.
-
-### Docker Compose
-
-- Target: web + server
-- Config: `docker-compose.yml` (app Dockerfiles live in `apps/*/Dockerfile`)
-- Build images: bun run docker:build
-- Start: bun run docker:up
-- Logs: bun run docker:logs
-- Stop: bun run docker:down
-
-Environment variables are read from each app's `.env` file (baked into web builds for public variables) and overridden in `docker-compose.yml` for container networking.
-
-For more details, see the guide on [Deploying with Docker Compose](https://www.better-t-stack.dev/docs/guides/docker).
-
-## Git Hooks and Formatting
-
-- Run checks: `bun run check`
-
-## Project Structure
-
-```
-seidor_it/
-├── apps/
-│   ├── web/         # Frontend application (Next.js)
-│   └── server/      # Backend API (Hono, ORPC)
-├── packages/
-│   ├── ui/          # Shared shadcn/ui components and styles
-│   ├── api/         # API layer / business logic
-│   ├── auth/        # Authentication configuration & logic
-│   └── db/          # Database schema & queries
-```
-
-## Available Scripts
-
-- `bun run dev`: Start all applications in development mode
-- `bun run build`: Build all applications
-- `bun run check-types`: Check TypeScript types across all apps
-- `bun run db:push`: Push schema changes to database
-- `bun run db:generate`: Generate database client/types
-- `bun run db:migrate`: Run database migrations
-- `bun run db:studio`: Open database studio UI
-- `bun run check`: Run Biome formatting and linting
-- `bun run docker:build`: Build the Docker Compose images
-- `bun run docker:up`: Build and start the Docker Compose stack
-- `bun run docker:logs`: Tail logs from the Docker Compose stack
-- `bun run docker:down`: Stop the Docker Compose stack
-
-## Better Auth Schema Generation
-
-After changing auth plugins or schema options, run `bun run auth:generate` from the project root. The script runs the Better Auth CLI through `varlock run` from the owning app directory, loading the auth instance from `src/services.ts`. Review the schema changes, then use your ORM's migration workflow to apply them.
+Foi escolhida a alternativa de **git bundle**, sem criar repositório remoto, enviar conteúdo a serviços externos ou convidar colaboradores. Caso a entrega seja feita por GitHub depois, o repositório deve ser privado e o acesso de leitura de `brunopujoniseidor` deve ser configurado lá. O aviso ao avaliador não foi enviado por esta aplicação.
