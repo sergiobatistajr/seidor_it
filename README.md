@@ -123,4 +123,4 @@ bun install --frozen-lockfile
 bun run dev:demo
 ```
 
-Foi escolhida a alternativa de **git bundle**, sem criar repositório remoto, enviar conteúdo a serviços externos ou convidar colaboradores. Caso a entrega seja feita por GitHub depois, o repositório deve ser privado e o acesso de leitura de `brunopujoniseidor` deve ser configurado lá. O aviso ao avaliador não foi enviado por esta aplicação.
+O projeto também está disponível no repositório público [sergiobatistajr/seidor_it](https://github.com/sergiobatistajr/seidor_it), conforme solicitado pelo proprietário. O histórico foi preservado e a branch principal é `main`. Por ser público, o código pode ser consultado sem convite de colaborador. O aviso ao avaliador não foi enviado.
